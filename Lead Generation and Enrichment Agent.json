@@ -159,7 +159,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer apify_api_8ZjUmqVsGWYCNfenPmQfhvpvUCUONv32hQIf"
+              "value": "Bearer "
             }
           ]
         },
