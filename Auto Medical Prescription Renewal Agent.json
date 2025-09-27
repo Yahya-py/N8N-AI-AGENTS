@@ -1,0 +1,278 @@
+{
+  "name": "Prescription",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        336
+      ],
+      "id": "a3751644-1b3e-4835-9fda-92963a5db274",
+      "name": "When chat message received",
+      "webhookId": "d6279975-1aa7-44c1-8e15-1149ddd0a477"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=**Role**: You are a GP Assistant designed to securely manage prescription renewals while maintaining HIPAA compliance and empathetic patient communication.\n\n**Tools & Databases**:\n\n1. **Patient Database**\n    - Fields: `patient_id` (unique), full name, DoB, email, phone\n2. **Approved Prescriptions Database**\n    - Fields: `patient_id`, `medication_id`, approval_status\n3. **Medications Database**\n    - Fields: `medication_id` (unique), name\n4. **Prescription Orders Database**\n    - Fields: `patient_id`, `medication_id`, timestamp\n\n**Protocol**:\n\n1. **Patient Verification**\n    - *Required Information*: Collect full name, date of birth, AND one of: registered phone/email.\n    - *Search*: Cross-reference ALL provided details in Patient DB.\n    - *No Match*: \"I can't find your record. To protect your privacy, please contact our office directly at +12212222 to verify your registration.\"\n2. **Prescription Validation**\n    - *If verified*: Cross-check Approved Prescriptions DB using EXACT `patient_id`.\n    - *No Approvals*: \"Our records show no active pre-approved medications. Please schedule a consultation at +12212222.\"\n3. **Medication Clarification**\n    - *For approved meds*: Retrieve ALL `medication_id` entries from Approved Prescriptions DB.\n    - *Translation*: Convert `medication_id` to human-readable names using Medications DB.\n    - *Presentation*: List as \"Available Options:\" with the names.\n4. **Patient Confirmation**\n    - *Prompt*: \"Which medication would you like to renew? Please specify by the name of the medication”\n    - *Mismatch Handling*:\n        - If requested medication ≠ pre-approved list: \"This requires GP authorization. Would you like me to connect you to our office?\"\n        - If ambiguous: \"To confirm, did you mean [medication name]?”\n5. **Order Processing**\n    - *Validation*: Re-verify `patient_id` → `medication_id` mapping.\n    - *Entry*: Create Prescription Orders DB record with ALL fields.\n    - *Confirmation*: \"Your [Medication] renewal is processed. Allow 2hrs for pharmacy fulfillment. Patient's name: XXX, prescribed medications: XXX\"\n\n**Communication Requirements**:\n\n- Use layperson terms (avoid medical jargon)\n- Confirm understanding at each stage: \"Let me recap...\"\n- Privacy: Never disclose full DOB/address; only confirm partial details (\"...ending in 6789\")\n- Empathy markers: \"I understand refills are urgent, processing this now.\"\n\n**Error States**:\n\n- Database unreachable: \"Our systems are updating – please try again in 15min or call +12212222.\"\n- Data conflicts: Escalate with internal alert flag.\n- Patient frustration: \"I appreciate your patience – let me resolve this promptly.\"\n\n**Prohibited Actions**:\n\n- Cannot modify approval status\n- Cannot access non-prescription health records\n- Cannot process controlled substances without GP override"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        352,
+        304
+      ],
+      "id": "707efb8b-689e-46c4-84d7-9f268f3d522f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        576
+      ],
+      "id": "b53d37ac-11b4-4c5a-a9ff-0cd345d6add9",
+      "name": "Window Buffer Memory"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/251201434c4280a0877cd341d1c5a970?v=251201434c4280a5a94a000ccfff9200",
+          "mode": "url"
+        },
+        "returnAll": true,
+        "simple": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 2.2,
+      "position": [
+        528,
+        688
+      ],
+      "id": "ab91cfad-1c95-483d-8315-2b0e6313ba09",
+      "name": "notion_get_all_patients",
+      "credentials": {
+        "notionApi": {
+          "id": "avNqUnozZJnp1sZo",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/251201434c4280dd8ae5cf09d57c6c96?v=251201434c42802f8882000c9084a815",
+          "mode": "url"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        768
+      ],
+      "id": "f3556bee-8aac-4cd5-90d8-9e274aa35efc",
+      "name": "notion_get_all_approved_prescriptions",
+      "credentials": {
+        "notionApi": {
+          "id": "avNqUnozZJnp1sZo",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/251201434c4280e49ac1e59ae3c8f23f?v=251201434c4280b0b630000c4da51ffd",
+          "mode": "url"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 2.2,
+      "position": [
+        736,
+        528
+      ],
+      "id": "8a457145-c12b-4f90-b635-fc57afa201d4",
+      "name": "notion_get_all_medication_names",
+      "credentials": {
+        "notionApi": {
+          "id": "avNqUnozZJnp1sZo",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "https://www.notion.so/251201434c4280dab1a0eaabf2f54c3b?v=251201434c428003ab60000c15bef31e",
+          "mode": "url"
+        },
+        "title": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Title', `The full name of the patient`, 'string') }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Medication|rich_text",
+              "textContent": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Text', `The name of the prescribed medication`, 'string') }}"
+            },
+            {
+              "key": "Prescription Date|date",
+              "includeTime": false,
+              "date": "={{ $now }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 2.2,
+      "position": [
+        912,
+        528
+      ],
+      "id": "c78235b9-8886-40d5-8ea7-92719aacd718",
+      "name": "notion_add_order",
+      "credentials": {
+        "notionApi": {
+          "id": "avNqUnozZJnp1sZo",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        656
+      ],
+      "id": "c3e56f77-992f-4262-b07e-24d2f1fdab19",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wm99Sr8ShUClQbLs",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "notion_get_all_patients": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "notion_get_all_approved_prescriptions": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "notion_get_all_medication_names": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "notion_add_order": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b595be01-b5d0-4ef5-944e-e5b40df0d873",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "04163b198f53bfa8eacd0786d51a20d841ce9ab44d726eafbcf44a7684c4512c"
+  },
+  "id": "2iFCWHDsLpS239su",
+  "tags": []
+}

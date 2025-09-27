@@ -1,0 +1,1326 @@
+{
+  "name": "Short videos",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        656,
+        1280
+      ],
+      "id": "d8da89c3-b588-4997-b4bc-02d79e2596fa",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "http://host.docker.internal:3123/mcp/sse",
+        "include": "selected",
+        "includeTools": [
+          "create-short-video"
+        ]
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        816,
+        1392
+      ],
+      "id": "17351432-01a3-42e3-8ca5-b9ac30c321f8",
+      "name": "MCP Client"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        368,
+        1008
+      ],
+      "id": "ae81d03d-20f2-45d8-b30c-edddc2f4d82b",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1296,
+        992
+      ],
+      "id": "8ca74f98-8ae6-455b-a1ea-039b183a4747",
+      "name": "Wait",
+      "webhookId": "fe4501f9-3334-4fc8-b3dd-83ea0ebb14a2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6cc1bd80-2bb7-47b6-950e-be3d6a36a965",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ready",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1728,
+        992
+      ],
+      "id": "c1995888-e999-47c3-8f86-7bf73921a484",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n    \"type\": \"object\",\n    \"properties\": {\n        \"videoId\": {\n            \"type\": \"string\",\n            \"description\": \"the id of the video\"\n        },\n        \"videoTitle\": {\n            \"type\": \"string\",\n            \"description\": \"the title of the video on Youtube\"\n        }\n    },\n    \"required\": [\n        \"videoId\",\n        \"videoTitle\"\n    ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        944,
+        1216
+      ],
+      "id": "2a14eb4b-eb34-4b20-b50c-fb6ce04f16de",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "content": "# Create short videos from r/Jokes",
+        "width": 2760
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        656
+      ],
+      "id": "ed401c8f-bfc2-4505-9457-71cc482b6332",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:3123/api/short-video/{{ $('Generate video').item.json.output.videoId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2096,
+        896
+      ],
+      "id": "d3435695-4c94-4101-b32b-bec4d2e82e7f",
+      "name": "Download the video",
+      "alwaysOutputData": false,
+      "retryOnFail": false,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Generate video').item.json.output.videoTitle }}",
+        "regionCode": "HU",
+        "categoryId": "24",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        2336,
+        896
+      ],
+      "id": "5e6daa48-3389-4bbf-bbf8-0725069bdaef",
+      "name": "Share on YouTube",
+      "disabled": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        1008
+      ],
+      "id": "9e3cc9d1-c026-4974-bef7-bea94bdfe07e",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<Instruction>\nTurn the following joke into a video. Keep everything, but make slight tweaks so it's easy to understand it in a text-to-speech video format with subtitles.\n\nReturn the video ID and the title of the video for the Youtube upload.\n</Instruction>\n\n<Joke>\n{{ $json.data[8].title }}\n{{ $json.data[8].contentSnippet }}\n</Joke>",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        736,
+        992
+      ],
+      "id": "f7cafb3b-7212-47d9-b17e-4f3d836d1528",
+      "name": "Generate video"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:3123/api/short-video/{{ $('Generate video').item.json.output.videoId }}/status",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1504,
+        992
+      ],
+      "id": "77e4013a-49b5-4079-88c3-c8c73d7aa1fd",
+      "name": "Check video status",
+      "alwaysOutputData": false,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "220a5d64-eea7-47fb-9557-682ed4ac2670",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "667fc922-3cb8-41cf-b86e-e635cf75bdc2",
+              "name": "contentSnippet",
+              "value": "={{ $json.contentSnippet.split('submitted')[0].trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        176,
+        1008
+      ],
+      "id": "1dbac308-a4c8-4db3-bc88-d836f33fd6a6",
+      "name": "Map fields"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.reddit.com/r/Jokes/top/.rss?t=day",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        1008
+      ],
+      "id": "b0dc7a6c-ab03-4620-bed9-c05ae34037ac",
+      "name": "Get top weekly posts"
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "http://host.docker.internal:3123/mcp/sse",
+        "include": "selected",
+        "includeTools": [
+          "create-short-video"
+        ]
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        816,
+        2368
+      ],
+      "id": "4973288b-85fe-4c7b-b1b1-77d9ba1f2fc1",
+      "name": "MCP Client1"
+    },
+    {
+      "parameters": {
+        "amount": 60
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1296,
+        1968
+      ],
+      "id": "a0987a96-fbae-4e77-b2da-1c328892a923",
+      "name": "Wait1",
+      "webhookId": "fe4501f9-3334-4fc8-b3dd-83ea0ebb14a2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6cc1bd80-2bb7-47b6-950e-be3d6a36a965",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ready",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1728,
+        1968
+      ],
+      "id": "6fad4d72-d27b-44e6-87dc-1337acadf738",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n    \"type\": \"object\",\n    \"properties\": {\n        \"videoId\": {\n            \"type\": \"string\",\n            \"description\": \"the id of the video\"\n        },\n        \"videoTitle\": {\n            \"type\": \"string\",\n            \"description\": \"the title of the video on Youtube\"\n        }\n    },\n    \"required\": [\n        \"videoId\",\n        \"videoTitle\"\n    ]\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        944,
+        2192
+      ],
+      "id": "d3f37989-424e-4cd2-97d4-9597422bc725",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:3123/api/short-video/{{ $('Generate video1').item.json.output.videoId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2080,
+        1888
+      ],
+      "id": "5001e2ec-466d-45af-8623-2a984c3941e9",
+      "name": "Download the video1",
+      "alwaysOutputData": false,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Generate video1').item.json.output.videoTitle }}",
+        "regionCode": "HU",
+        "categoryId": "24",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        2944,
+        2000
+      ],
+      "id": "f3c1966f-78ab-4bb5-81f8-94524a5f0a28",
+      "name": "Share on YouTube1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<Instruction>\nYou are a creative assistant who turns Reddit posts into engaging short videos.\n1. Read the provided Reddit post.\n2. Create a catchy and SEO-friendly title suitable for a YouTube video.\n3. Rewrite the post's content into a clear and concise script. The script should be formatted for a text-to-speech engine.\n\nReturn ONLY a JSON object containing the generated title and script.\n</Instruction>\n\n<Post>\nTitle: {{ $json.title }}\nContent: {{ $json.contentSnippet }}\n</Post>",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        736,
+        1968
+      ],
+      "id": "c5f950ac-8703-4783-95fd-24c287b629aa",
+      "name": "Generate video1"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:3123/api/short-video/{{ $('Generate video1').item.json.output.videoId }}/status",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1504,
+        1968
+      ],
+      "id": "622ea8f7-26c1-4b6c-bf72-c2c0c430e714",
+      "name": "Check video status1",
+      "alwaysOutputData": false,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "220a5d64-eea7-47fb-9557-682ed4ac2670",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "667fc922-3cb8-41cf-b86e-e635cf75bdc2",
+              "name": "contentSnippet",
+              "value": "={{ $json.contentSnippet.split('submitted')[0].trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        2048
+      ],
+      "id": "22bb58ae-6b80-4467-9c9d-6895308f73a6",
+      "name": "Map fields1"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.reddit.com/r/LifeProTips/top/.rss?t=week",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        -496,
+        2032
+      ],
+      "id": "46b3b6b1-6cfb-445b-bbf7-37049387daf4",
+      "name": "Get top weekly posts1"
+    },
+    {
+      "parameters": {
+        "content": "# Create short videos from r/LifeProTips",
+        "width": 2760
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        1600
+      ],
+      "id": "0dc29214-bcd2-44bd-8c06-eaef7f42f674",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        608,
+        3312
+      ],
+      "id": "32d761bd-5b62-473b-8b0a-ebebd830e92a",
+      "name": "OpenAI Chat Model2"
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "http://host.docker.internal:3123/mcp/sse",
+        "include": "selected",
+        "includeTools": [
+          "create-short-video"
+        ]
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        768,
+        3440
+      ],
+      "id": "7f7dfea2-c4e6-4a9d-bf16-0ed835322e5b",
+      "name": "MCP Client2"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        336,
+        3056
+      ],
+      "id": "7d434c1f-65a4-48a0-a7fb-a8d3d595754d",
+      "name": "Aggregate2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1248,
+        3040
+      ],
+      "id": "e546cf90-bdee-4670-adfb-a62230f463ff",
+      "name": "Wait2",
+      "webhookId": "fe4501f9-3334-4fc8-b3dd-83ea0ebb14a2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6cc1bd80-2bb7-47b6-950e-be3d6a36a965",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ready",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1696,
+        3040
+      ],
+      "id": "ea582ab5-9d5d-4a70-9023-682de00e0d90",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n    \"type\": \"object\",\n    \"properties\": {\n        \"videoId\": {\n            \"type\": \"string\",\n            \"description\": \"the id of the video\"\n        },\n        \"videoTitle\": {\n            \"type\": \"string\",\n            \"description\": \"the title of the video on Youtube\"\n        }\n    },\n    \"required\": [\n        \"videoId\",\n        \"videoTitle\"\n    ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        912,
+        3248
+      ],
+      "id": "782414f1-1d03-4b04-be4a-36c59baa4f6e",
+      "name": "Structured Output Parser2"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:3123/api/short-video/{{ $('Generate video2').item.json.output.videoId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2048,
+        2928
+      ],
+      "id": "a96a6f1e-2c33-49d5-8f6c-b1201114b86e",
+      "name": "Download the video2",
+      "alwaysOutputData": false,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Generate video2').item.json.output.videoTitle }}",
+        "regionCode": "HU",
+        "categoryId": "24",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        2288,
+        2928
+      ],
+      "id": "170ade12-dfe5-4bc0-9604-6b579971c7b8",
+      "name": "Share on YouTube2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<Instruction>\nTurn the following reddit story into a video. Keep everything, but make slight tweaks so it's easy to understand it in a text-to-speech video format with subtitles.\n\nReturn the video ID and the title of the video for the Youtube upload.\n</Instruction>\n\n<Story>\n{{ $json.data[4].title }}\n{{ $json.data[4].contentSnippet }}\n</Story>",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        688,
+        3040
+      ],
+      "id": "c50b32bc-bb01-417d-b01e-0274d3a6a986",
+      "name": "Generate video2"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:3123/api/short-video/{{ $('Generate video2').item.json.output.videoId }}/status",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1472,
+        3040
+      ],
+      "id": "6d6d3396-039e-4005-8864-18bc586deeaa",
+      "name": "Check video status2",
+      "alwaysOutputData": false,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "220a5d64-eea7-47fb-9557-682ed4ac2670",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "667fc922-3cb8-41cf-b86e-e635cf75bdc2",
+              "name": "contentSnippet",
+              "value": "={{ $json.contentSnippet.split('submitted')[0].trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        128,
+        3056
+      ],
+      "id": "7efeac4b-07bc-4fb5-bc2d-76bd2bd20307",
+      "name": "Map fields2"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.reddit.com/r/stories/top/.rss?t=week",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        -96,
+        3056
+      ],
+      "id": "fe95dc84-3875-467c-baa5-1ccd5a932e5e",
+      "name": "Get top weekly posts2"
+    },
+    {
+      "parameters": {
+        "content": "# Create short videos from r/Stories",
+        "width": 2760
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        2656
+      ],
+      "id": "8ba5b7ae-b4f1-4017-9d04-c020f233ab32",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "# Troubleshooting Youtube\n\n1. If you are running n8n locally, set the \n\n```N8N_DEFAULT_BINARY_DATA_MODE=filesystem```\n\nenvironment variable if you are getting 400 HTTP errors\n\n2. Youtube has a daily upload limitations on uploading videos using the API - you can only upload up to 6 videos\n",
+        "height": 300,
+        "width": 700,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2608,
+        848
+      ],
+      "id": "4f8dd23a-a343-4461-b0de-301717c52c08",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "# MCP server\n\n## How to run it\n\n```\ndocker run -it --rm --name short-video-maker -p 3123:3123 -e LOG_LEVEL=debug -e PEXELS_API_KEY= gyoridavid/short-video-maker:latest-tiny\n```\n\n## Resources\n\n- [Github](https://github.com/gyoridavid/short-video-maker)\n- [npm](https://www.npmjs.com/package/short-video-maker)\n- [Docker](https://hub.docker.com/r/gyoridavid/short-video-maker)",
+        "height": 420,
+        "width": 1900,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        464,
+        160
+      ],
+      "id": "bd04c3ba-686d-4793-b296-63d611cf1bf1",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        544,
+        2368
+      ],
+      "id": "24395300-8262-4c78-bd51-398f50a8450a",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wm99Sr8ShUClQbLs",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "maxItems": 6
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        112,
+        2064
+      ],
+      "id": "bad69b60-91ae-4f25-8941-b2d144d696a5",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        400,
+        2032
+      ],
+      "id": "75702bb6-ce14-43a5-b2a4-2e70b33aed25",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6c50b102-7bf9-493c-99ae-2ecf5e00b51f",
+              "leftValue": "={{ $json['Approve or reject video'][0] }}",
+              "rightValue": "Accept",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2560,
+        2032
+      ],
+      "id": "fd02909f-45cd-4165-bdcb-23ac47878a08",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "=data",
+        "options": {
+          "fileName": "="
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        3264,
+        2096
+      ],
+      "id": "4d0e38a3-80a9-4c51-896c-4df3c42ce971",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "resume": "form",
+        "formTitle": "Video Approval",
+        "formDescription": "Approve Video before uploading",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Approve or reject video",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Accept"
+                  },
+                  {
+                    "option": "Reject"
+                  }
+                ]
+              },
+              "multiselect": true,
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2368,
+        1872
+      ],
+      "id": "bd3d493e-b727-464e-af15-d620bf120d23",
+      "name": "Wait3",
+      "webhookId": "9d7ce9be-ff57-42b1-a4b0-d280ced845c1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate video",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate video",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Generate video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Check video status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Download the video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate video",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download the video": {
+      "main": [
+        [
+          {
+            "node": "Share on YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get top weekly posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate video": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check video status": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map fields": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get top weekly posts": {
+      "main": [
+        [
+          {
+            "node": "Map fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate video1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Check video status1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Download the video1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate video1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download the video1": {
+      "main": [
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate video1": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check video status1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map fields1": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get top weekly posts1": {
+      "main": [
+        [
+          {
+            "node": "Map fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate video2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client2": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate video2",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate2": {
+      "main": [
+        [
+          {
+            "node": "Generate video2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Check video status2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Download the video2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate video2",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download the video2": {
+      "main": [
+        [
+          {
+            "node": "Share on YouTube2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate video2": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check video status2": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map fields2": {
+      "main": [
+        [
+          {
+            "node": "Aggregate2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get top weekly posts2": {
+      "main": [
+        [
+          {
+            "node": "Map fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate video1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Structured Output Parser1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Generate video1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share on YouTube1": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "Share on YouTube1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait3": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4923c8b9-b9f8-4a65-9b4b-e009e6d0a585",
+  "meta": {
+    "instanceId": "04163b198f53bfa8eacd0786d51a20d841ce9ab44d726eafbcf44a7684c4512c"
+  },
+  "id": "VX0TW7UAKZOIyr9r",
+  "tags": []
+}

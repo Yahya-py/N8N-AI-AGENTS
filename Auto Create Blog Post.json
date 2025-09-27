@@ -1,0 +1,754 @@
+{
+  "name": "Create Blog Post",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        80,
+        880
+      ],
+      "id": "63a164b4-8bbe-43f6-8f38-6a357fbc9c4b",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=I'm working on an article with the following topic:\n\n<TopicTitle>\n{{ $('Come up with a topic1').item.json.output.title }}\n</TopicTitle>\n\n<TopicSummary>\n{{ $('Come up with a topic1').item.json.output.summary }}\n</TopicSummary>\n\nOriginal articles we used as an inspiration to come up with the topic\n\n<InpirationArticles>\n{{ $('Come up with a topic1').item.json.output.inspirations.map(item => `<Article>\\n${item.article}\\n</Article>`).join('\\n') }}\n</InpirationArticles>\n\n\nI did a research on google and came up with the results below. Each article is the markdown content of the HTML body.\n\n<OnlineResearch>\n{{  $json.research_results.map(item => `<Article>\\n${item.summary}\\n</Article>`).join('\\n') }}\n</OnlineResearch>\n\nWrite an detailed, long, engaging article on the subject with length less than 2000 characters, make sure to structure the article well, breaking the long text with lists, using bold, etc..",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        4048,
+        880
+      ],
+      "id": "168e6b5a-d6e8-4863-ac21-dbd6b2ef3244",
+      "name": "Basic LLM Chain3"
+    },
+    {
+      "parameters": {
+        "content": "# 4. Write and post the article\n\n## After creating the article, you could other LLM chains or agents to add\n- SEO keywords\n- Add personality by rewriting the content in your style\n- Adding interlinks\n- Add sources",
+        "height": 240,
+        "width": 860
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4048,
+        608
+      ],
+      "id": "9b6d6296-9fa9-4727-8c84-2583430feba3",
+      "name": "Sticky Note5",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n    \"type\": \"object\",\n    \"properties\": {\n        \"title\": {\n            \"type\": \"string\",\n            \"description\": \"the title of the article\"\n        },\n        \"content\": {\n            \"type\": \"string\",\n            \"description\": \"the content of the article\"\n        }\n    },\n    \"required\": [\n        \"title\",\n        \"content\"\n    ]\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        4304,
+        1152
+      ],
+      "id": "48a9d871-01a0-4b5c-88bf-9f6e738a622e",
+      "name": "Structured Output Parser3"
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.output.content }}",
+        "destinationKey": "content_html",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        4512,
+        880
+      ],
+      "id": "823adf5b-d8cd-4656-a92e-bf7c2d51d68d",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "bookmarks",
+        "options": {
+          "destinationFieldName": "bookmark"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        864,
+        880
+      ],
+      "id": "6b3009ec-99e5-48fb-823e-41cd28267902",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "bookmarks",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        880
+      ],
+      "id": "30cbc64c-adc3-4420-92ce-8d41c75c0b1d",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n    \"type\": \"object\",\n    \"properties\": {\n        \"ai_bookmarks\": {\n            \"type\": \"array\",\n            \"description\": \"user name\",\n            \"items\": {\n                \"type\": \"object\",\n                \"properties\": {\n                    \"title\": {\n                        \"type\": \"string\"\n                    },\n                    \"link\": {\n                        \"type\": \"string\"\n                    }\n                },\n                \"required\": [\n                    \"title\",\n                    \"link\"\n                ]\n            }\n        }\n    },\n    \"required\": [\n        \"ai_bookmarks\"\n    ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        2048,
+        1152
+      ],
+      "id": "4caf51ff-18d8-4e65-8e9c-3bd641775fcd",
+      "name": "Structured Output Parser2"
+    },
+    {
+      "parameters": {
+        "url": "https://pinboard.in/popular/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        384,
+        880
+      ],
+      "id": "4e481cfc-c1cb-4bbd-b63b-6114f5754f0c",
+      "name": "Get popular bookmarks"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "bookmarks",
+              "cssSelector": ".display",
+              "returnValue": "html",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        880
+      ],
+      "id": "162406a0-2a96-4224-82da-0a8629ff1d37",
+      "name": "Extract bookmarks"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "dataPropertyName": "bookmark",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "link",
+              "cssSelector": ".bookmark_title",
+              "returnValue": "attribute",
+              "attribute": "href"
+            },
+            {
+              "key": "title",
+              "cssSelector": ".bookmark_title"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        880
+      ],
+      "id": "62fc5e43-c830-40d0-afbf-206749dfd52e",
+      "name": "Extract bookmark"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Your job is to find an interesting topic to create an article about in the AI subject. The audience is \"AI enthusiasts\".\n\nYou are presented with popular articles (title and content). Please create an idea for an article that my AI enthusiastic audience will love. They are mostly knowledge workers, managers, leaders.\n\nThe thought process you should follow:\n1. Review all the articles from below\n2. Find the most interesting one for my audience. You can combine multiple articles if it makes sense.\n3. Return the articles used for inspiration by copying them over without changing the content.\n\n<Articles>\n{{ $('Aggregate3').item.json.articles.map(item => `<Article>\\n<Title>\\n${item.title}\\n</Title>\\n<Link>\\n${item.link}\\n<\\Link>\\n<Content>\\n${item.article}\\n</Content>\\n</Article>`).join('\\n') }}\n</Articles>",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        3184,
+        880
+      ],
+      "id": "0a4be976-5843-4bee-9a23-2421cf14693f",
+      "name": "Come up with a topic1",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<Instruction>\nYour job is to find AI related bookmarks that I can use as inspiration to write an article for my audience - mostly managers and leaders. Make sure you only pick bookmarks that are suitable for them.\n</Instruction>\n\n<ThoughtProcess>\nThe thought process you should follow:\n1. Review all the articles from below\n2. Find the ones that are AI related and relevant for my audience\n3. Return the title and the link of each AI related bookmarks\n</ThoughtProcess>\n\n<Bookmarks>\n{{ $json.bookmarks.map(bookmark => `<Bookmark>\\n<Title>${bookmark.title}</Title>\\n<Link>${bookmark.link}</Link>\\n</Bookmark>`).join('\\n') }}\n</Bookmarks>",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        1760,
+        880
+      ],
+      "id": "92891780-2ba0-4e83-ba6c-340247e10542",
+      "name": "Find trending AI bookmarks",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.ai_bookmarks",
+        "options": {
+          "destinationFieldName": "bookmark"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2112,
+        880
+      ],
+      "id": "af7d5483-4828-4a7e-b417-b1c99b1c312e",
+      "name": "Split Out3"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "articles",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2720,
+        880
+      ],
+      "id": "c9226cdc-182d-4eca-b51f-39499f3ef2d2",
+      "name": "Aggregate3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d7b5f308-b2e9-49f7-b9bd-4d339d96d0ee",
+              "name": "article",
+              "value": "={{ $json.data }}",
+              "type": "string"
+            },
+            {
+              "id": "2cf35a52-6c39-4109-a5b2-3ae3e45fdde3",
+              "name": "title",
+              "value": "={{ $('Split Out3').item.json.bookmark.title }}",
+              "type": "string"
+            },
+            {
+              "id": "41c86ac7-6301-47a8-881d-9402f76e1a06",
+              "name": "link",
+              "value": "={{ $('Split Out3').item.json.bookmark.link }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2528,
+        880
+      ],
+      "id": "261d5e7d-3542-421d-936d-eaf16b991861",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n    \"type\": \"object\",\n    \"properties\": {\n        \"title\": {\n            \"type\": \"string\"\n        },\n        \"summary\": {\n            \"type\": \"string\"\n        },\n        \"inspirations\": {\n            \"type\": \"array\",\n            \"description\": \"inspirations used to create the concept for the article\",\n            \"items\": {\n                \"type\": \"object\",\n                \"properties\": {\n                    \"title\": {\n                        \"type\": \"string\",\n                        \"description\": \"the title of the inspiration\"\n                    },\n                    \"link\": {\n                        \"type\": \"string\",\n                        \"description\": \"the link of the inspiration\"\n                    },\n                    \"article\": {\n                        \"type\": \"string\",\n                        \"description\": \"the content of the inspiration\"\n                    }\n                },\n                \"required\": [\n                    \"title\",\n                    \"link\",\n                    \"article\"\n                ]\n            }\n        }\n    },\n    \"required\": [\n        \"inspirations\",\n        \"title\",\n        \"summary\"\n    ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        3280,
+        1168
+      ],
+      "id": "d9a37ae4-cbfa-40a7-b826-3ae940ae936f",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "YOK7OHJhchKsyJRr",
+          "mode": "list",
+          "cachedResultName": "Scrape Bookmarks"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "link": "={{ $json.bookmark.link }}"
+          },
+          "matchingColumns": [
+            "link"
+          ],
+          "schema": [
+            {
+              "id": "link",
+              "displayName": "link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        2320,
+        880
+      ],
+      "id": "9d5a0e79-829d-4622-b4cd-afa70762371a",
+      "name": "Scrape and summarize bookmarks"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "kwhkvKQee60kSCaJ",
+          "mode": "list",
+          "cachedResultName": "Google Deep Research"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "top_results": 3,
+            "num_search_terms": 2,
+            "context": "=<Instructions>\nI'd like to create an article. I already got inspirations from other articles, and came up with a title and a summary. Find the data below.\n\nI want to run a research on Google on the subject to collect even more data/inspiration. Help me to come up with search terms I can use.\nI need 4 search terms. Make sure to be creative, and give me different ones so I can get diverse search results.\n</Instructions>\n\n<Title>\n{{ $json.output.title }}\n</Title>\n\n<Summary>\n{{ $json.output.summary }}\n</Summary>\n\n<Inspirations>\n{{ $json.output.inspirations.map(item => `<Inspiration>\\n${item.article}\\n</Inspiration>`).join('\\n') }}\n</Inspirations>"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "top_results",
+              "displayName": "top_results",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "context",
+              "displayName": "context",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "num_search_terms",
+              "displayName": "num_search_terms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        3520,
+        880
+      ],
+      "id": "333ca2c5-1d55-413e-8bd4-d81bd6825f3d",
+      "name": "Run deep research"
+    },
+    {
+      "parameters": {
+        "content": "# 1. Gather bookmarks",
+        "height": 80,
+        "width": 760
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        640,
+        768
+      ],
+      "id": "81b75645-b019-44b1-bc0f-61cc1c15eb4d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# 2. Pick the related bookmarks",
+        "height": 80,
+        "width": 1060
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        768
+      ],
+      "id": "b07c964c-823f-4412-b4ec-b7a383553db6",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "# 3. Create topic, deep research",
+        "height": 80,
+        "width": 560
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3184,
+        768
+      ],
+      "id": "e73c3c09-5175-480e-ac2a-87e4073da87c",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "# I recommend you to add some kind of persistency so you won't use the same bookmarks twice",
+        "height": 680,
+        "width": 300,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        288,
+        432
+      ],
+      "id": "acdaec34-2a25-4747-866c-3b43423fafa6",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3104,
+        1616
+      ],
+      "id": "02825983-633a-44b0-938e-b8d47826c913",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wm99Sr8ShUClQbLs",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pageId": {
+          "__rl": true,
+          "value": "https://www.notion.so/My-Blog-256201434c428027a861c21ffa33703f",
+          "mode": "url"
+        },
+        "title": "={{ $json.output.title }}",
+        "blockUi": {
+          "blockValues": [
+            {
+              "textContent": "={{ $json.output.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        4720,
+        880
+      ],
+      "id": "ac5ba2c2-1868-4884-a876-7eced4744aaa",
+      "name": "Create a page",
+      "credentials": {
+        "notionApi": {
+          "id": "avNqUnozZJnp1sZo",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get popular bookmarks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain3": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser3": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain3",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Create a page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Extract bookmark",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Find trending AI bookmarks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Find trending AI bookmarks",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get popular bookmarks": {
+      "main": [
+        [
+          {
+            "node": "Extract bookmarks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract bookmarks": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract bookmark": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find trending AI bookmarks": {
+      "main": [
+        [
+          {
+            "node": "Split Out3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out3": {
+      "main": [
+        [
+          {
+            "node": "Scrape and summarize bookmarks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate3": {
+      "main": [
+        [
+          {
+            "node": "Come up with a topic1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Aggregate3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Come up with a topic1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Come up with a topic1": {
+      "main": [
+        [
+          {
+            "node": "Run deep research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape and summarize bookmarks": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run deep research": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain3",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Come up with a topic1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Find trending AI bookmarks",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Structured Output Parser3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "636233e8-85d1-4ddf-87d6-4986e8dbbb57",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "04163b198f53bfa8eacd0786d51a20d841ce9ab44d726eafbcf44a7684c4512c"
+  },
+  "id": "adRGhxNED9MEGviA",
+  "tags": []
+}

@@ -1,0 +1,1137 @@
+{
+  "name": "youtube template",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "fd4e01ae-14c0-4808-ae85-19b3fd849d3f",
+      "name": "When clicking ‘Test workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        -48,
+        1040
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {},
+      "id": "ced86ad6-150b-46a8-8fb3-4acaa62165bc",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        3584,
+        784
+      ],
+      "webhookId": "171de821-395d-4d34-b8ee-bf7834475b6e",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {},
+      "id": "0df3165d-0629-494c-91d2-f5fdaae293b7",
+      "name": "Wait1",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        752,
+        1040
+      ],
+      "webhookId": "e68157f3-3a6b-4d89-89bb-f5d4ba8cd187",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"Keyword1\": \"string\",\n\t\"Keyword2\": \"string\",\n    \"Keyword3\": \"string\"\n}"
+      },
+      "id": "f21c8a60-ef0b-4657-a780-18bb2e79656a",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        592,
+        1232
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a YouTube content strategist. The input of the request is the following content idea :  {{ $json.query }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "=Given a content idea, extract **three keyword phrases** (1–5 words each) that are: \n- Highly relevant for a YouTube search \n- Based on what people would realistically search for \n- Focused on *actions*, *techniques*, or *tools* not just literal parts of the content idea \n- Avoid abstract or vague terms that would not return good search results  \n\nExample:  \nContent Idea: \"Turn a Zoom call into a viral TikTok\" \nOutput: \n1. \"zoom to tiktok edit\" \n2. \"short form video from meetings\"  \n\nReturn ONLY the three keyword phrases, no explanation."
+            }
+          ]
+        }
+      },
+      "id": "a7ba1fc3-f761-43f0-a1c7-4126f87f0b95",
+      "name": "Create Keywords",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        400,
+        1040
+      ],
+      "typeVersion": 1.5
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/streamers~youtube-scraper/runs?token=",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"dateFilter\": \"year\",\n    \"lengthFilter\": \"between420\",\n    \"maxResults\": 10,\n    \"searchQueries\": [\n        \"{{ $json.output.Keyword1 }}\",\n        \"{{ $json.output.Keyword2 }}\",\n        \"{{ $json.output.Keyword3 }}\"\n    ],\n    \"sortingOrder\": \"relevance\"\n} ",
+        "options": {}
+      },
+      "id": "2e384183-d050-4880-85a5-416f4e2f0f63",
+      "name": "YTB Search Scrape",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        976,
+        1040
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "url": "https://api.apify.com/v2/acts/streamers~youtube-scraper/runs/last/dataset/items?token=",
+        "options": {}
+      },
+      "id": "5ed4c51c-d1ea-4239-a2d6-486ff6041eca",
+      "name": "Get DataSet",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1952,
+        1024
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "",
+              "operator": {
+                "name": "filter.operator.equals",
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.data.status }}",
+              "rightValue": "SUCCEEDED"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "172a1cd3-5a9d-4386-b231-79d9d9f3c0f0",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1536,
+        1040
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "url": "https://api.apify.com/v2/acts/streamers~youtube-scraper/runs/last?token=",
+        "options": {}
+      },
+      "id": "a0e062d2-8784-4cd5-b5c1-d3454d9f0361",
+      "name": "Check IF Finished",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1312,
+        1040
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {},
+      "id": "c135cd22-83ad-4683-b551-4daa6ecd2765",
+      "name": "Wait2",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        1696,
+        1216
+      ],
+      "webhookId": "669568d5-df00-4931-9a2c-93baf3df2ab7",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const views = $json.viewCount;\nconst subscribers = $json.numberOfSubscribers;\nconst likes = $json.likes;\nconst comments = $json.commentsCount;\nconst publishedAt = $json.date;// ISO string, e.g. \"2024-05-01T12:00:00Z\"\n\n// Defensive check for missing values\nif (!views || !subscribers || !publishedAt) {\n  return { error: \"Missing required data\" };\n}\n\n// Parse dates\nconst publishedDate = new Date(publishedAt);\nconst now = new Date();\n\n// Validate dates\nif (isNaN(publishedDate.getTime())) {\n  return { error: \"Invalid publishedAt date\" };\n}\n\n// Calculate days since upload\nconst msPerDay = 1000 * 60 * 60 * 24;\nconst timeDiff = now.getTime() - publishedDate.getTime();\nconst daysSinceUpload = Math.floor(timeDiff / msPerDay);\n\n// Compute RPI\nconst rpi = (views / subscribers) * ((likes + comments) / views / 10);\n\n// Apply temporal decay factor\nconst decayFactor = Math.exp(-0.015 * daysSinceUpload);\nconst rpiAdjusted = rpi * decayFactor;\n\n// Calculate Pseudo CTR\nconst ctrScore = rpiAdjusted * 100;\n\nreturn {\n   ctrPercent: parseFloat(ctrScore.toFixed(3)), // ← Your CTR-style %\n};\n"
+      },
+      "id": "0a2f46af-6b2a-4e8d-b32f-f991c3c40a74",
+      "name": "Calculate CTR",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2160,
+        1216
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "c02cce76-591d-43cb-adc2-c449451f29ad",
+      "name": "Merge Data",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        2336,
+        1040
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert in YouTube video title optimization.",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "={{ $json.text }}"
+            }
+          ]
+        }
+      },
+      "id": "dc058b84-706c-4c16-9a7a-7a37b9276d5a",
+      "name": "Create Titles",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        3776,
+        784
+      ],
+      "typeVersion": 1.5
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"title1\": \"string\",\n  \"title2\": \"string\",\n  \"title3\": \"string\",\n  \"title4\": \"string\",\n  \"title5\": \"string\"\n}"
+      },
+      "id": "bbbfc4e6-20fe-4ba1-9925-94fda889fc30",
+      "name": "Structured Output Parser1",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        3984,
+        1040
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "content": "## How this is Working ?\n**1 -** Enter your content idea in the Edit Fields node in a \"raw\" format. Ex : Boil Eggs Perfectly\n**2 -** LLM create 3 keywords request based on the idea and Apify scrape the YTB Search\n**3 -** Wait until the dataset is completed in Apify\n**4 -** Retrieve Dataset from Apify, calculate approximation of CTR and filter top performing videos\n**5 -** LLM analyze patterns of best performing titles and create a prompt based on it. Another LLM create 5 titles based on these criteria\n**6 -** LLM analyze patterns of best performing thumbnails and create a prompt based on it. Another LLM create 1 thumbnail based on these criteria\n**7 -** Return titles and thumbnail in a HTML Page\n\n\n**📺 Youtube Video Tutorial : https://youtu.be/Upuj9Pi94g0**\n**🛠️ Need Help with Your Workflows ? https://tally.so/r/wayeqB**\n**👨‍💻 More Workflows : https://n8n.io/creators/nasser/**",
+        "height": 320,
+        "width": 780,
+        "color": 7
+      },
+      "id": "52b51842-bafb-4f2a-a9aa-c417d2262c5e",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -128,
+        32
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## SETUP\n\n**Setup Input Content Idea :** Enter Keyword Related to the niche you want. Trigger can be replaced with anything as long as you retrieve a content idea. For example : Form submission, Database entry, etc ...\n\nIf you want to change the number of keywords, update the data accordingly in the \"Create Keywords\" LLM Chain node ➡️ Structured Output Parser AND in the \"YTB Search Scrape\" HTTP Request Node in Body ➡️ JSON ➡️ searchQueries.\nIf you want to change the number of scraped videos for each keyword, update the data accordingly in the \"Create Videos Dataset\" HTTP Request Node in Body ➡️ JSON ➡️ maxResults.\nIf you want to adjust the CTR Calculation feel free to update it in the Code Node ➡️ Follow the Comments (after \"//\") to find what you're looking for.\nIf you want to adjust the level of virality of the videos kept for analaysis go to Filter Node ➡️ Value.\n\n**Setup Output HTML Page :** You can also replace this part with any type of storage. For example : Airtable Database, Google Drive/Google Sheet, Send to an email, etc ...\n\n**APIs :** For the following third-party integrations, replace [YOUR_API_TOKEN] with your API Token or connect your account via Client ID / Secret to your n8n instance :\n- Apify : https://docs.apify.com/api/v2/getting-started \n- OpenAI : https://platform.openai.com/docs/overview (base URL : https://api.openai.com/v1) OR OpenRouter : https://openrouter.ai/docs/quickstart (base URL : https://openrouter.ai/api/v1)\n- HuggingFace (FLUX.1) : https://huggingface.co/docs",
+        "height": 520,
+        "width": 780,
+        "color": 7
+      },
+      "id": "63c3d34d-774d-464b-8d05-7baade60ef8a",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -128,
+        384
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"query\": \"animal sleep videos\"\n}",
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "da3d0388-0c26-40d1-afb5-5a789800c4c9",
+      "name": "Content Idea",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        176,
+        1040
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "jsCode": "const titles = items.map(item => item.json.title);\nreturn [{ json: { titles } }];"
+      },
+      "id": "b3067e0a-a580-44f9-9a52-fffa0c3fa4f6",
+      "name": "Create List of Titles",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        3024,
+        784
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n\n<html>\n<head>\n  <meta charset=\"UTF-8\" />\n  <title>My HTML document</title>\n</head>\n<body>\n  <div class=\"container\">\n    <h1>Thumbnail</h1>\n    <img src=\"data:image/png;base64,{{ $('Convert to Base64').first().json.data }}\" />\n    <h3>Titles</h3>\n    <p>1. {{ $json.output.title1 }}<br>2. {{ $json.output.title2 }}<br>3. {{ $json.output.title3 }}<br>4. {{ $json.output.title4 }}<br>5. {{ $json.output.title5 }}</p>\n  </div>\n</body>\n</html>\n\n<style>\n.container {\n  background-color: #ffffff;\n  text-align: center;\n  padding: 16px;\n  border-radius: 8px;\n}\n\nh1 {\n  color: #ff6d5a;\n  font-size: 24px;\n  font-weight: bold;\n  padding: 8px;\n}\n\nh2 {\n  color: #909399;\n  font-size: 18px;\n  font-weight: bold;\n  padding: 8px;\n}\n</style>\n\n<script>\nconsole.log(\"Hello World!\");\n</script>"
+      },
+      "id": "777c1cb6-4829-497f-b97b-0350e2c74316",
+      "name": "HTML",
+      "type": "n8n-nodes-base.html",
+      "position": [
+        4432,
+        1056
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "f99739df-224d-400e-b415-c9f679691e4a",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        2896,
+        1536
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {},
+      "id": "a986845c-7581-4467-b5f2-d85d61a55dfe",
+      "name": "Wait3",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        3424,
+        1744
+      ],
+      "webhookId": "5d3ca3ac-0aa9-4c1c-bd62-7252712467a9",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {},
+      "id": "834a2bdb-17c7-437c-a33e-2ce86c091b8e",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        4224,
+        1056
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "You are an expert visual prompt engineer.",
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "=You are an expert visual prompt engineer.\n\nYou are given several thumbnail analysis texts, each describing what made a YouTube thumbnail visually engaging and effective. \n\nData for you : \n- The Content Idea : {{ $('Content Idea').first().json.query }}\n- The Analysis of performing Thumbnails for this idea : {{ $json.analysis}}\n\n\nYour job is to:\n1. **Summarize the most common and impactful visual elements** across all analyses.\n2. **Generate one precise image prompt** that captures the best-performing elements, ready to be used with an image generation model (like DALL·E, Midjourney, or Stable Diffusion).\nMandatory : \n- Maximum 400 characters (including spaces and punctuations) !\n- When generating the prompt text, make sure that any double quotes within the string are escaped using a backslash (\\\") so that the final output can be safely included in a JSON object.\n\n📥 Input: A list of thumbnail descriptions and visual analyses.\n🎯 Goal: One image prompt that includes clear guidance on:\n- Subject placement and expression\n- Colors and contrast\n- Text style or layout (if any)\n- Graphic or visual elements\n- Overall layout or composition\n- Mood or tone (e.g. excitement, curiosity, professionalism)\n\n⚠️ Don't describe what you’re doing. Just output the final image prompt.\n\n📌 Example output format:\nA high-contrast YouTube thumbnail with a confident man on the right side, bold yellow text on the left saying \"AI SECRETS\", a dark tech-themed background, and digital data stream effects in the back — cinematic lighting, 16:9 composition."
+            }
+          ]
+        }
+      },
+      "id": "8d9d15c5-2090-4cf2-8236-cd0a6214532a",
+      "name": "Create Prompt",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        3264,
+        1296
+      ],
+      "typeVersion": 1.5
+    },
+    {
+      "parameters": {
+        "jsCode": "const analysis = items.map(item => {\n  // Safely navigate into the nested structure\n  const text = item.json?.content?.parts?.[0]?.text || null;\n  return text;\n});\n\nreturn [\n  {\n    json: {\n      analysis\n    }\n  }\n];\n"
+      },
+      "id": "9dde1d80-5c9c-4f97-acb6-02724141aff7",
+      "name": "Create List of Analysis",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        3072,
+        1296
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "huggingFaceApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "image/png"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"inputs\":\"{{ $json.text }}\",\n  \"parameters\": {\n    \"height\": 720,\n    \"width\": 1280,\n    \"num_inference_steps\": 30,\n    \"guidance_scale\": 8.0\n  }\n}\n",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "284963e9-fa58-460b-aa2b-8607c8db7990",
+      "name": "Generate Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        3760,
+        1296
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "huggingFaceApi": {
+          "id": "DyABAoQ8UJWoD80a",
+          "name": "HuggingFaceApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {
+          "encoding": "base64"
+        }
+      },
+      "id": "73ce4e8b-fe3b-48d5-8956-39ab10f3fa22",
+      "name": "Convert to Base64",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        3952,
+        1296
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 1- Input\nEnter your content idea in the Edit Fields node in a \"raw\" format. Ex : Boil Eggs Perfectly",
+        "height": 360,
+        "width": 460,
+        "color": 7
+      },
+      "id": "4a93537f-2422-4ba7-b512-7bc52f6fb921",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -128,
+        912
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 2- Create DataSet\nLLM create 3 keywords request based on the idea and Apify scrape the YTB Search",
+        "height": 480,
+        "width": 820,
+        "color": 7
+      },
+      "id": "efa97342-c563-42a8-af3d-b328ec174024",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        352,
+        912
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 3 - Wait for DataSet Completion\nWait until the dataset is completed in Apify",
+        "height": 520,
+        "width": 680,
+        "color": 7
+      },
+      "id": "378ee31a-3f57-473b-94e7-e5b7140493a0",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1200,
+        912
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 4- Filter Performing Videos\nRetrieve Dataset from Apify, calculate approximation of CTR and filter top performing videos",
+        "height": 460,
+        "width": 860,
+        "color": 7
+      },
+      "id": "39b52acd-db62-432f-aa69-7be4b2811d24",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1904,
+        912
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 5- Generate Titles\nLLM analyze patterns of best performing titles and create a prompt based on it. Another LLM create 5 titles based on these criteria",
+        "height": 500,
+        "width": 1340,
+        "color": 7
+      },
+      "id": "80ea7f29-2299-44a2-b2f6-433b2999d46b",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2784,
+        672
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 6- Generate Thumbnail\nLLM analyze patterns of best performing thumbnails and create a prompt based on it. Another LLM create 1 thumbnail based on these criteria",
+        "height": 760,
+        "width": 1340,
+        "color": 7
+      },
+      "id": "f0092ae5-843c-4a83-98a6-1f879bee7653",
+      "name": "Sticky Note8",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2784,
+        1200
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 7- Output\nReturn titles and thumbnail in a HTML Page",
+        "height": 360,
+        "width": 520,
+        "color": 7
+      },
+      "id": "6c815352-ac7e-4a4d-950b-d7eddc75ed62",
+      "name": "Sticky Note9",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        4144,
+        912
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "leftValue": "={{ $json.ctrPercent }}",
+              "rightValue": 0.1
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "555dd44b-0341-4436-8a96-8df870c7e5af",
+      "name": "Keep Top Performing Videos",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        2544,
+        1040
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert in YouTube video title optimization. Here is your input : \n{{ $json.titles.join('\\n') }}",
+        "messages": {
+          "messageValues": [
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "=You will be given a list of YouTube video titles that ranked highly for a specific keyword or topic. For information the topic of the video is : {{ $('Content Idea').first().json.query }}\nYour task is to:  \n1. Analyze the title list for patterns, such as:  \n- Repeating structures or formats (e.g., “How to…”, “Top X…”, “This Changed Everything”)  \n- Use of numbers, brackets, capital letters, emotional hooks, urgency, etc.  \n- Word combinations or topic angles (e.g., “AI Automation for Creators” vs. “Build AI Tools with No Code”)  \n2. Summarize what makes these titles effective (mandatory : be as precise as possible in 5-15 points). \n3. Based on your analysis, generate a prompt for another AI language model. This prompt will instruct the second model to generate new YouTube titles for the same keyword/topic, using the same high-performing structure, tone, and techniques.  \n\n⚠️ Make sure the new prompt:  \n- Clearly instructs the LLM to follow identified title patterns.  - Tells it to generate clickable, short, high-performing YouTube titles. \n- Avoids common spammy phrasing or clickbait that doesn’t match the original tone.  \n\n✅ Format your response like this:\nPATTERN SUMMARY:\n- Point 1\n- Point 2\n- Point 3\n\nPROMPT:\n\"Create 5 YouTube video titles about [TOPIC] using the following format:\n- [Insert pattern or tone summary]\n- Each title should be under 60 characters, engaging, and based on the provided structure.\"\n\n📥 Example Input (titles):\n- 5 AI Tools That Will Replace Your Job in 2025\n- The Best No-Code AI Tool You’re Not Using Yet\n- I Built an AI Business with $0 (Full Tutorial)\n- How to Automate Everything with AI Agents\n- This Free AI Tool Blew My Mind\n\n🧠 Expected Output:\nPATTERN SUMMARY:\n- Uses emotional triggers like fear or curiosity (“Replace Your Job”, “Blew My Mind”)\n- Often includes numbers or power words (“5 Tools”, “Best”, “Free”)\n- Many titles promise results or value (“Full Tutorial”, “Automate Everything”)\n\nPROMPT:\n\"Create 5 YouTube video titles about AI automation tools for solo creators using this format:\n- Include emotional or curiosity-based phrases\n- Use numbers or power words when relevant\n- Promise a clear value or benefit in the title\nEach title should be under 60 characters and match the tone of the top-ranking videos.\"\n"
+            }
+          ]
+        }
+      },
+      "id": "76ab736f-e054-4e7a-a4c1-6297099d21aa",
+      "name": "Analyze Pattern & Create Prompt",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        3232,
+        784
+      ],
+      "typeVersion": 1.5
+    },
+    {
+      "parameters": {},
+      "id": "2ace9597-9a15-4c0a-861e-ffba5497589e",
+      "name": "Wait4",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        3584,
+        1296
+      ],
+      "webhookId": "6c1f7a02-e6da-4a82-a48a-41c59056255d",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        352,
+        1440
+      ],
+      "id": "52f0d0d2-a23b-4be8-a860-3660929496bd",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wm99Sr8ShUClQbLs",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3216,
+        1072
+      ],
+      "id": "266857ce-a8a0-432b-a156-51d7d40b2dac",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wm99Sr8ShUClQbLs",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3712,
+        1056
+      ],
+      "id": "039043a4-8ffb-4de4-afe1-588a5ff72168",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wm99Sr8ShUClQbLs",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3552,
+        1504
+      ],
+      "id": "d1309dfe-d2e7-45be-8127-4ab1cfcdbc34",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wm99Sr8ShUClQbLs",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "You are an expert in YouTube thumbnail performance. Your job is to analyze why a thumbnail might be performing well and describe it precisely so a designer or AI can later recreate its essence.",
+        "imageUrls": "={{ $json.thumbnailUrl }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        3152,
+        1552
+      ],
+      "id": "47e552ba-2047-4c66-81dd-2da9ee42ce25",
+      "name": "Analyze image",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wm99Sr8ShUClQbLs",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "C:/Users/yahya/desktop/YT Auto data/output1.png",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        4016,
+        1504
+      ],
+      "id": "dd308c4d-ffd2-40b2-873c-dbaeaa7ef1de",
+      "name": "Read/Write Files from Disk"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get DataSet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Create Titles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "YTB Search Scrape",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Check IF Finished",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4": {
+      "main": [
+        [
+          {
+            "node": "Generate Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "Keep Top Performing Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get DataSet": {
+      "main": [
+        [
+          {
+            "node": "Calculate CTR",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Idea": {
+      "main": [
+        [
+          {
+            "node": "Create Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate CTR": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Create Prompt": {
+      "main": [
+        [
+          {
+            "node": "Wait4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Titles": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image": {
+      "main": [
+        [
+          {
+            "node": "Convert to Base64",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Keywords": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Create List of Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check IF Finished": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Base64": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "YTB Search Scrape": {
+      "main": [
+        [
+          {
+            "node": "Check IF Finished",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create List of Titles": {
+      "main": [
+        [
+          {
+            "node": "Analyze Pattern & Create Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create List of Analysis": {
+      "main": [
+        [
+          {
+            "node": "Create Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Create Keywords",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Create Titles",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Top Performing Videos": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create List of Titles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Pattern & Create Prompt": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Content Idea",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Create Keywords",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze Pattern & Create Prompt",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Create Titles",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Create Prompt",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5cfe49ef-367c-406b-8d20-6a3181539193",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "04163b198f53bfa8eacd0786d51a20d841ce9ab44d726eafbcf44a7684c4512c"
+  },
+  "id": "KYe6B6ynUzKC9L6x",
+  "tags": []
+}
